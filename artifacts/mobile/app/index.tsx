@@ -16,12 +16,16 @@ import { FetalVisual } from "@/components/FetalVisual";
 import { SectionCard } from "@/components/SectionCard";
 import { usePregnancy } from "@/context/PregnancyContext";
 import { getWeekData } from "@/data/pregnancyData";
+import { getPersonalizedDiet, DIETARY_LABELS, DIETARY_COLORS } from "@/data/dietaryData";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const c = colors.light;
-  const { currentWeek, momName, dadName, babyName } = usePregnancy();
+  const { currentWeek, momName, dadName, babyName, dietaryPreference, dueDate } = usePregnancy();
   const weekData = getWeekData(currentWeek);
+  const personalizedDiet = weekData
+    ? getPersonalizedDiet(weekData.momDiet, currentWeek, dietaryPreference)
+    : [];
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -116,6 +120,23 @@ export default function HomeScreen() {
         </Text>
       </View>
 
+      {dueDate && (
+        <View style={[styles.dueDateRow, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Feather name="gift" size={14} color="#9b6db5" />
+          <Text style={[styles.dueDateText, { color: c.mutedForeground }]}>
+            Due date:{" "}
+            <Text style={{ color: "#9b6db5", fontWeight: "700" }}>
+              {dueDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+            </Text>
+          </Text>
+          <View style={[styles.daysLeft, { backgroundColor: "#9b6db520" }]}>
+            <Text style={{ color: "#9b6db5", fontSize: 11, fontWeight: "700" }}>
+              {Math.max(0, Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))}d left
+            </Text>
+          </View>
+        </View>
+      )}
+
       <FetalVisual weekData={weekData} />
 
       <View style={styles.sectionTitle}>
@@ -132,10 +153,10 @@ export default function HomeScreen() {
         items={weekData.momSymptoms}
       />
       <SectionCard
-        title="Diet & Nutrition"
+        title={`Diet & Nutrition · ${DIETARY_LABELS[dietaryPreference]}`}
         icon="coffee"
-        accentColor="#e8608a"
-        items={weekData.momDiet}
+        accentColor={DIETARY_COLORS[dietaryPreference]}
+        items={personalizedDiet}
         collapsed
       />
       <SectionCard
@@ -187,6 +208,24 @@ export default function HomeScreen() {
         accentColor="#6db58a"
         items={weekData.fetalDevelopment}
       />
+
+      <TouchableOpacity
+        style={[styles.resourcesShortcut, { backgroundColor: "#9b6db510", borderColor: "#9b6db530" }]}
+        onPress={() => router.push("/resources")}
+      >
+        <View style={[styles.resourcesShortcutIcon, { backgroundColor: "#9b6db520" }]}>
+          <Feather name="external-link" size={18} color="#9b6db5" />
+        </View>
+        <View style={styles.resourcesShortcutContent}>
+          <Text style={[styles.resourcesShortcutTitle, { color: "#9b6db5" }]}>
+            Explore Pregnancy Resources
+          </Text>
+          <Text style={[styles.resourcesShortcutSub, { color: "#9b6db580" }]}>
+            Guides, tools, and expert links for every stage
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={16} color="#9b6db5" />
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -296,6 +335,48 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
+  dueDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 8,
+  },
+  dueDateText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  daysLeft: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  resourcesShortcut: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 16,
+    marginTop: 20,
+    marginBottom: 8,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+  },
+  resourcesShortcutIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resourcesShortcutContent: { flex: 1 },
+  resourcesShortcutTitle: { fontSize: 14, fontWeight: "700", marginBottom: 2 },
+  resourcesShortcutSub: { fontSize: 12 },
   sectionTitleText: {
     fontSize: 18,
     fontWeight: "700",

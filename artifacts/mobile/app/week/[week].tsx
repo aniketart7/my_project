@@ -16,6 +16,7 @@ import { FetalVisual } from "@/components/FetalVisual";
 import { SectionCard } from "@/components/SectionCard";
 import { usePregnancy } from "@/context/PregnancyContext";
 import { getWeekData } from "@/data/pregnancyData";
+import { getPersonalizedDiet, DIETARY_LABELS, DIETARY_COLORS } from "@/data/dietaryData";
 
 type TabType = "baby" | "mom" | "dad";
 
@@ -23,11 +24,14 @@ export default function WeekDetailScreen() {
   const { week } = useLocalSearchParams<{ week: string }>();
   const insets = useSafeAreaInsets();
   const c = colors.light;
-  const { currentWeek, setCurrentWeek, momName, dadName, babyName } = usePregnancy();
+  const { currentWeek, setCurrentWeek, momName, dadName, babyName, dietaryPreference } = usePregnancy();
   const [activeTab, setActiveTab] = useState<TabType>("baby");
 
   const weekNum = parseInt(week || "1", 10);
   const weekData = getWeekData(weekNum);
+  const personalizedDiet = weekData
+    ? getPersonalizedDiet(weekData.momDiet, weekNum, dietaryPreference)
+    : [];
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -148,10 +152,10 @@ export default function WeekDetailScreen() {
               items={weekData.momSymptoms}
             />
             <SectionCard
-              title="Diet & Nutrition"
+              title={`Diet & Nutrition · ${DIETARY_LABELS[dietaryPreference]}`}
               icon="coffee"
-              accentColor="#e8608a"
-              items={weekData.momDiet}
+              accentColor={DIETARY_COLORS[dietaryPreference]}
+              items={personalizedDiet}
             />
             <SectionCard
               title="Exercise & Movement"

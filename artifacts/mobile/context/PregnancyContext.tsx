@@ -7,17 +7,22 @@ import React, {
   useState,
 } from "react";
 
+export type DietaryPreference = "veg" | "nonveg" | "vegan";
+
 interface PregnancyContextType {
   currentWeek: number;
   setCurrentWeek: (week: number) => void;
+  lmpDate: Date | null;
+  setLmpDate: (date: Date | null) => void;
   dueDate: Date | null;
-  setDueDate: (date: Date) => void;
   momName: string;
   setMomName: (name: string) => void;
   dadName: string;
   setDadName: (name: string) => void;
   babyName: string;
   setBabyName: (name: string) => void;
+  dietaryPreference: DietaryPreference;
+  setDietaryPreference: (pref: DietaryPreference) => void;
   isSetup: boolean;
   completeSetup: () => void;
 }
@@ -26,15 +31,29 @@ const PregnancyContext = createContext<PregnancyContextType | undefined>(
   undefined
 );
 
-const STORAGE_KEY = "@pregnancy_data";
+const STORAGE_KEY = "@pregnancy_data_v2";
+
+function calcWeekFromLmp(lmp: Date): number {
+  const diffMs = Date.now() - lmp.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const week = Math.floor(diffDays / 7) + 1;
+  return Math.max(1, Math.min(40, week));
+}
+
+function calcDueDateFromLmp(lmp: Date): Date {
+  return new Date(lmp.getTime() + 280 * 24 * 60 * 60 * 1000);
+}
 
 export function PregnancyProvider({ children }: { children: React.ReactNode }) {
   const [currentWeek, setCurrentWeekState] = useState<number>(8);
-  const [dueDate, setDueDateState] = useState<Date | null>(null);
+  const [lmpDate, setLmpDateState] = useState<Date | null>(null);
   const [momName, setMomNameState] = useState<string>("");
   const [dadName, setDadNameState] = useState<string>("");
   const [babyName, setBabyNameState] = useState<string>("Baby");
+  const [dietaryPreference, setDietaryPreferenceState] = useState<DietaryPreference>("veg");
   const [isSetup, setIsSetup] = useState<boolean>(false);
+
+  const dueDate = lmpDate ? calcDueDateFromLmp(lmpDate) : null;
 
   useEffect(() => {
     const load = async () => {
@@ -42,11 +61,17 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
         const stored = await AsyncStorage.getItem(STORAGE_KEY);
         if (stored) {
           const data = JSON.parse(stored);
-          if (data.currentWeek) setCurrentWeekState(data.currentWeek);
-          if (data.dueDate) setDueDateState(new Date(data.dueDate));
+          if (data.lmpDate) {
+            const lmp = new Date(data.lmpDate);
+            setLmpDateState(lmp);
+            setCurrentWeekState(calcWeekFromLmp(lmp));
+          } else if (data.currentWeek) {
+            setCurrentWeekState(data.currentWeek);
+          }
           if (data.momName) setMomNameState(data.momName);
           if (data.dadName) setDadNameState(data.dadName);
           if (data.babyName) setBabyNameState(data.babyName);
+          if (data.dietaryPreference) setDietaryPreferenceState(data.dietaryPreference);
           if (data.isSetup) setIsSetup(data.isSetup);
         }
       } catch (e) {
@@ -61,10 +86,11 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
       try {
         const current: Record<string, unknown> = {
           currentWeek,
-          dueDate: dueDate?.toISOString(),
+          lmpDate: lmpDate?.toISOString() ?? null,
           momName,
           dadName,
           babyName,
+          dietaryPreference,
           isSetup,
         };
         const merged = { ...current, ...updates };
@@ -73,7 +99,7 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
         // ignore
       }
     },
-    [currentWeek, dueDate, momName, dadName, babyName, isSetup]
+    [currentWeek, lmpDate, momName, dadName, babyName, dietaryPreference, isSetup]
   );
 
   const setCurrentWeek = useCallback(
@@ -84,10 +110,16 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
     [save]
   );
 
-  const setDueDate = useCallback(
-    (date: Date) => {
-      setDueDateState(date);
-      save({ dueDate: date.toISOString() });
+  const setLmpDate = useCallback(
+    (date: Date | null) => {
+      setLmpDateState(date);
+      if (date) {
+        const week = calcWeekFromLmp(date);
+        setCurrentWeekState(week);
+        save({ lmpDate: date.toISOString(), currentWeek: week });
+      } else {
+        save({ lmpDate: null });
+      }
     },
     [save]
   );
@@ -116,6 +148,14 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
     [save]
   );
 
+  const setDietaryPreference = useCallback(
+    (pref: DietaryPreference) => {
+      setDietaryPreferenceState(pref);
+      save({ dietaryPreference: pref });
+    },
+    [save]
+  );
+
   const completeSetup = useCallback(() => {
     setIsSetup(true);
     save({ isSetup: true });
@@ -126,14 +166,17 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
       value={{
         currentWeek,
         setCurrentWeek,
+        lmpDate,
+        setLmpDate,
         dueDate,
-        setDueDate,
         momName,
         setMomName,
         dadName,
         setDadName,
         babyName,
         setBabyName,
+        dietaryPreference,
+        setDietaryPreference,
         isSetup,
         completeSetup,
       }}
