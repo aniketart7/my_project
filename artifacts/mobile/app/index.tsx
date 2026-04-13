@@ -209,6 +209,30 @@ export default function HomeScreen() {
         items={weekData.fetalDevelopment}
       />
 
+      <View style={styles.quickLinksRow}>
+        <TouchableOpacity
+          style={[styles.quickLinkCard, { backgroundColor: "#ef6c4b10", borderColor: "#ef6c4b30" }]}
+          onPress={() => router.push("/health")}
+        >
+          <View style={[styles.quickLinkIcon, { backgroundColor: "#ef6c4b20" }]}>
+            <Feather name="activity" size={20} color="#ef6c4b" />
+          </View>
+          <Text style={[styles.quickLinkTitle, { color: "#ef6c4b" }]}>Health{"\n"}Tracker</Text>
+          <Text style={[styles.quickLinkSub, { color: "#ef6c4b80" }]}>Vitals · Tests · Scans</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.quickLinkCard, { backgroundColor: "#6db58a10", borderColor: "#6db58a30" }]}
+          onPress={() => router.push("/soulful")}
+        >
+          <View style={[styles.quickLinkIcon, { backgroundColor: "#6db58a20" }]}>
+            <Feather name="wind" size={20} color="#6db58a" />
+          </View>
+          <Text style={[styles.quickLinkTitle, { color: "#6db58a" }]}>Traditional{"\n"}& Soulful</Text>
+          <Text style={[styles.quickLinkSub, { color: "#6db58a80" }]}>Yoga · Mantra · Garbhasanskar</Text>
+        </TouchableOpacity>
+      </View>
+
       <TouchableOpacity
         style={[styles.resourcesShortcut, { backgroundColor: "#9b6db510", borderColor: "#9b6db530" }]}
         onPress={() => router.push("/resources")}
@@ -356,6 +380,26 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 8,
   },
+  quickLinksRow: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginTop: 20,
+    gap: 10,
+  },
+  quickLinkCard: {
+    flex: 1,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 14,
+    gap: 8,
+    alignItems: "flex-start",
+  },
+  quickLinkIcon: {
+    width: 40, height: 40, borderRadius: 12,
+    alignItems: "center", justifyContent: "center",
+  },
+  quickLinkTitle: { fontSize: 13, fontWeight: "800", lineHeight: 18 },
+  quickLinkSub: { fontSize: 10, fontWeight: "500" },
   resourcesShortcut: {
     flexDirection: "row",
     alignItems: "center",

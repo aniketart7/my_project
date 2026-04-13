@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
 } from "react";
+import type { HealthRecord } from "@/data/healthData";
 
 export type DietaryPreference = "veg" | "nonveg" | "vegan";
 
@@ -23,6 +24,9 @@ interface PregnancyContextType {
   setBabyName: (name: string) => void;
   dietaryPreference: DietaryPreference;
   setDietaryPreference: (pref: DietaryPreference) => void;
+  healthRecords: HealthRecord[];
+  addHealthRecord: (record: HealthRecord) => void;
+  getRecordsForTest: (testId: string) => HealthRecord[];
   isSetup: boolean;
   completeSetup: () => void;
 }
@@ -31,7 +35,8 @@ const PregnancyContext = createContext<PregnancyContextType | undefined>(
   undefined
 );
 
-const STORAGE_KEY = "@pregnancy_data_v2";
+const STORAGE_KEY = "@pregnancy_data_v3";
+const HEALTH_RECORDS_KEY = "@pregnancy_health_records_v1";
 
 function calcWeekFromLmp(lmp: Date): number {
   const diffMs = Date.now() - lmp.getTime();
@@ -51,6 +56,7 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
   const [dadName, setDadNameState] = useState<string>("");
   const [babyName, setBabyNameState] = useState<string>("Baby");
   const [dietaryPreference, setDietaryPreferenceState] = useState<DietaryPreference>("veg");
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
   const [isSetup, setIsSetup] = useState<boolean>(false);
 
   const dueDate = lmpDate ? calcDueDateFromLmp(lmpDate) : null;
@@ -73,6 +79,10 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
           if (data.babyName) setBabyNameState(data.babyName);
           if (data.dietaryPreference) setDietaryPreferenceState(data.dietaryPreference);
           if (data.isSetup) setIsSetup(data.isSetup);
+        }
+        const storedHealth = await AsyncStorage.getItem(HEALTH_RECORDS_KEY);
+        if (storedHealth) {
+          setHealthRecords(JSON.parse(storedHealth));
         }
       } catch (e) {
         // ignore
@@ -101,6 +111,14 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
     },
     [currentWeek, lmpDate, momName, dadName, babyName, dietaryPreference, isSetup]
   );
+
+  const saveHealthRecords = useCallback(async (records: HealthRecord[]) => {
+    try {
+      await AsyncStorage.setItem(HEALTH_RECORDS_KEY, JSON.stringify(records));
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   const setCurrentWeek = useCallback(
     (week: number) => {
@@ -156,6 +174,24 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
     [save]
   );
 
+  const addHealthRecord = useCallback(
+    (record: HealthRecord) => {
+      setHealthRecords((prev) => {
+        const updated = [record, ...prev];
+        saveHealthRecords(updated);
+        return updated;
+      });
+    },
+    [saveHealthRecords]
+  );
+
+  const getRecordsForTest = useCallback(
+    (testId: string): HealthRecord[] => {
+      return healthRecords.filter((r) => r.testId === testId);
+    },
+    [healthRecords]
+  );
+
   const completeSetup = useCallback(() => {
     setIsSetup(true);
     save({ isSetup: true });
@@ -177,6 +213,9 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
         setBabyName,
         dietaryPreference,
         setDietaryPreference,
+        healthRecords,
+        addHealthRecord,
+        getRecordsForTest,
         isSetup,
         completeSetup,
       }}
