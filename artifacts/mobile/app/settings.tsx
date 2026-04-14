@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import colors from "@/constants/colors";
 import { DietaryPreference, usePregnancy } from "@/context/PregnancyContext";
 import { DIETARY_COLORS, DIETARY_LABELS } from "@/data/dietaryData";
+import { COUNTRIES_LIST, COUNTRY_REGION_MAP } from "@/data/soulfulData";
 
 type WeekMode = "lmp" | "manual";
 
@@ -52,6 +53,8 @@ export default function SettingsScreen() {
     setBabyName,
     dietaryPreference,
     setDietaryPreference,
+    country,
+    setCountry,
   } = usePregnancy();
 
   const [weekMode, setWeekMode] = useState<WeekMode>(lmpDate ? "lmp" : "manual");
@@ -299,6 +302,65 @@ export default function SettingsScreen() {
               ? "You'll see diet tips including lean meats, fish, and eggs alongside plant-based options."
               : "You'll see fully plant-based diet tips with special attention to B12, iron, calcium, and DHA."}
           </Text>
+        </View>
+      </View>
+
+      {/* ─── COUNTRY / REGION ─── */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: c.mutedForeground }]}>COUNTRY OF ORIGIN</Text>
+        <Text style={[styles.sectionSubLabel, { color: c.mutedForeground }]}>
+          Personalises mantras, music and spiritual guidance recommendations
+        </Text>
+        <View style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ padding: 12, gap: 8 }}
+          >
+            {COUNTRIES_LIST.map((c_name) => {
+              const isSelected = country === c_name;
+              const regionKey = COUNTRY_REGION_MAP[c_name];
+              const regionColors: Record<string, string> = {
+                india: "#e8608a",
+                western: "#5b8fd6",
+                islamic: "#6db58a",
+                eastasian: "#ef6c4b",
+              };
+              const accent = regionColors[regionKey] || "#9b6db5";
+              return (
+                <TouchableOpacity
+                  key={c_name}
+                  style={[
+                    styles.countryChip,
+                    isSelected
+                      ? { backgroundColor: accent, borderColor: accent }
+                      : { backgroundColor: c.background, borderColor: c.border },
+                  ]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setCountry(c_name);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.countryChipText,
+                      { color: isSelected ? "#fff" : c.foreground },
+                    ]}
+                  >
+                    {c_name}
+                  </Text>
+                  {isSelected && <Feather name="check" size={12} color="#fff" />}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <View style={[styles.currentCountryRow, { borderTopColor: c.border }]}>
+            <Feather name="map-pin" size={14} color="#9b6db5" />
+            <Text style={[styles.currentCountryText, { color: c.mutedForeground }]}>
+              Selected: <Text style={{ fontWeight: "700", color: "#9b6db5" }}>{country}</Text>
+            </Text>
+          </View>
         </View>
       </View>
 
@@ -578,4 +640,23 @@ const styles = StyleSheet.create({
   },
   aboutTitle: { fontSize: 16, fontWeight: "700" },
   aboutText: { fontSize: 14, lineHeight: 22 },
+  countryChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  countryChipText: { fontSize: 13, fontWeight: "600" },
+  currentCountryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderTopWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  currentCountryText: { fontSize: 13 },
 });

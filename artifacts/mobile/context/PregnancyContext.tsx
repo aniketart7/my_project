@@ -9,6 +9,7 @@ import React, {
 import type { HealthRecord } from "@/data/healthData";
 
 export type DietaryPreference = "veg" | "nonveg" | "vegan";
+export type { AppRegion } from "@/data/soulfulData";
 
 interface PregnancyContextType {
   currentWeek: number;
@@ -27,6 +28,8 @@ interface PregnancyContextType {
   healthRecords: HealthRecord[];
   addHealthRecord: (record: HealthRecord) => void;
   getRecordsForTest: (testId: string) => HealthRecord[];
+  country: string;
+  setCountry: (country: string) => void;
   isSetup: boolean;
   completeSetup: () => void;
 }
@@ -57,6 +60,7 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
   const [babyName, setBabyNameState] = useState<string>("Baby");
   const [dietaryPreference, setDietaryPreferenceState] = useState<DietaryPreference>("veg");
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
+  const [country, setCountryState] = useState<string>("India");
   const [isSetup, setIsSetup] = useState<boolean>(false);
 
   const dueDate = lmpDate ? calcDueDateFromLmp(lmpDate) : null;
@@ -78,6 +82,7 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
           if (data.dadName) setDadNameState(data.dadName);
           if (data.babyName) setBabyNameState(data.babyName);
           if (data.dietaryPreference) setDietaryPreferenceState(data.dietaryPreference);
+          if (data.country) setCountryState(data.country);
           if (data.isSetup) setIsSetup(data.isSetup);
         }
         const storedHealth = await AsyncStorage.getItem(HEALTH_RECORDS_KEY);
@@ -101,6 +106,7 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
           dadName,
           babyName,
           dietaryPreference,
+          country,
           isSetup,
         };
         const merged = { ...current, ...updates };
@@ -109,7 +115,7 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
         // ignore
       }
     },
-    [currentWeek, lmpDate, momName, dadName, babyName, dietaryPreference, isSetup]
+    [currentWeek, lmpDate, momName, dadName, babyName, dietaryPreference, country, isSetup]
   );
 
   const saveHealthRecords = useCallback(async (records: HealthRecord[]) => {
@@ -192,6 +198,14 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
     [healthRecords]
   );
 
+  const setCountry = useCallback(
+    (c: string) => {
+      setCountryState(c);
+      save({ country: c });
+    },
+    [save]
+  );
+
   const completeSetup = useCallback(() => {
     setIsSetup(true);
     save({ isSetup: true });
@@ -216,6 +230,8 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
         healthRecords,
         addHealthRecord,
         getRecordsForTest,
+        country,
+        setCountry,
         isSetup,
         completeSetup,
       }}

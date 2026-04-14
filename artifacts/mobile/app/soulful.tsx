@@ -1,5 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import * as Linking from "expo-linking";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -14,566 +15,608 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import colors from "@/constants/colors";
 import { usePregnancy } from "@/context/PregnancyContext";
 import {
-  getGarbhasanskarForTrimester,
-  getMantrasForTrimester,
-  getPositivityForTrimester,
+  GarbhasanskarActivity,
+  Mantra,
+  PositivityItem,
+  YogaPose,
+  getActivitiesForRegion,
+  getMantrasForRegion,
+  getPositivityForRegion,
+  getRegionForCountry,
   getTrimesterFromWeek,
   getYogaForTrimester,
-  type GarbhasanskarActivity,
-  type Mantra,
-  type PositivityItem,
-  type YogaPose,
 } from "@/data/soulfulData";
 
-type TabType = "yoga" | "mantra" | "garbhasanskar" | "positivity";
+type Tab = "yoga" | "mantra" | "garbhasanskar" | "positivity";
 
-const TABS: { id: TabType; label: string; icon: string; color: string }[] = [
-  { id: "yoga", label: "Yoga", icon: "wind", color: "#6db58a" },
-  { id: "mantra", label: "Mantra", icon: "volume-2", color: "#9b6db5" },
-  { id: "garbhasanskar", label: "Garbhasanskar", icon: "music", color: "#f0a500" },
-  { id: "positivity", label: "Positivity", icon: "sun", color: "#e8608a" },
-];
+// ─── open URL helper ───────────────────────────────────────────────────────────
+async function openUrl(url: string) {
+  try {
+    await Linking.openURL(url);
+  } catch {
+    // silently ignore
+  }
+}
 
-export default function SoulfulScreen() {
-  const insets = useSafeAreaInsets();
+// ─── Play Button ──────────────────────────────────────────────────────────────
+function PlayButton({
+  playUrl,
+  spotifyUrl,
+  small,
+}: {
+  playUrl: string;
+  spotifyUrl?: string;
+  small?: boolean;
+}) {
   const c = colors.light;
-  const { currentWeek } = usePregnancy();
-  const [activeTab, setActiveTab] = useState<TabType>("yoga");
-  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
+  if (!spotifyUrl) {
+    return (
+      <TouchableOpacity
+        style={[styles.playBtn, small && styles.playBtnSmall]}
+        onPress={() => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          openUrl(playUrl);
+        }}
+        activeOpacity={0.8}
+      >
+        <Feather name="play-circle" size={small ? 14 : 16} color="#fff" />
+        <Text style={[styles.playBtnText, small && styles.playBtnTextSmall]}>Play</Text>
+      </TouchableOpacity>
+    );
+  }
 
-  const trimester = getTrimesterFromWeek(currentWeek);
-  const activeTabData = TABS.find((t) => t.id === activeTab)!;
-
-  const toggle = (id: string) => {
-    Haptics.selectionAsync();
-    setExpandedItem((prev) => (prev === id ? null : id));
-  };
-
-  const yoga = getYogaForTrimester(trimester);
-  const mantras = getMantrasForTrimester(trimester);
-  const garbhasanskar = getGarbhasanskarForTrimester(trimester);
-  const positivity = getPositivityForTrimester(trimester);
+  if (expanded) {
+    return (
+      <View style={styles.playRow}>
+        <TouchableOpacity
+          style={[styles.playBtn, styles.playBtnYt]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            openUrl(playUrl);
+            setExpanded(false);
+          }}
+          activeOpacity={0.8}
+        >
+          <Feather name="youtube" size={14} color="#fff" />
+          <Text style={styles.playBtnText}>YouTube</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.playBtn, styles.playBtnSpotify]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            openUrl(spotifyUrl!);
+            setExpanded(false);
+          }}
+          activeOpacity={0.8}
+        >
+          <Feather name="music" size={14} color="#fff" />
+          <Text style={styles.playBtnText}>Spotify</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.playBtnClose} onPress={() => setExpanded(false)}>
+          <Feather name="x" size={14} color={c.textSecondary} />
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
-    <View style={[styles.container, { backgroundColor: c.background }]}>
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          { paddingTop: topPad + 16, backgroundColor: activeTabData.color },
-        ]}
-      >
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Feather name="arrow-left" size={22} color="#fff" />
-          </TouchableOpacity>
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>Traditional & Soulful</Text>
-            <Text style={styles.headerSubtitle}>
-              Week {currentWeek} · Trimester {trimester} guidance
-            </Text>
-          </View>
-        </View>
-
-        {/* Tab bar */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabBarContent}
-        >
-          {TABS.map((tab) => (
-            <TouchableOpacity
-              key={tab.id}
-              style={[
-                styles.tab,
-                activeTab === tab.id && { backgroundColor: "rgba(255,255,255,0.25)" },
-              ]}
-              onPress={() => {
-                setActiveTab(tab.id);
-                setExpandedItem(null);
-                Haptics.selectionAsync();
-              }}
-            >
-              <Feather
-                name={tab.icon as any}
-                size={14}
-                color={activeTab === tab.id ? "#fff" : "rgba(255,255,255,0.65)"}
-              />
-              <Text
-                style={[
-                  styles.tabText,
-                  { color: activeTab === tab.id ? "#fff" : "rgba(255,255,255,0.65)" },
-                ]}
-              >
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: bottomPad + 40, paddingTop: 16 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {activeTab === "yoga" && (
-          <YogaTab
-            poses={yoga}
-            expandedItem={expandedItem}
-            toggle={toggle}
-            c={c}
-            trimester={trimester}
-          />
-        )}
-        {activeTab === "mantra" && (
-          <MantraTab
-            mantras={mantras}
-            expandedItem={expandedItem}
-            toggle={toggle}
-            c={c}
-          />
-        )}
-        {activeTab === "garbhasanskar" && (
-          <GarbhasanskarTab
-            activities={garbhasanskar}
-            expandedItem={expandedItem}
-            toggle={toggle}
-            c={c}
-          />
-        )}
-        {activeTab === "positivity" && (
-          <PositivityTab
-            items={positivity}
-            expandedItem={expandedItem}
-            toggle={toggle}
-            c={c}
-          />
-        )}
-      </ScrollView>
-    </View>
+    <TouchableOpacity
+      style={[styles.playBtn, small && styles.playBtnSmall]}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setExpanded(true);
+      }}
+      activeOpacity={0.8}
+    >
+      <Feather name="play-circle" size={small ? 14 : 16} color="#fff" />
+      <Text style={[styles.playBtnText, small && styles.playBtnTextSmall]}>Play</Text>
+    </TouchableOpacity>
   );
 }
 
-function YogaTab({
-  poses,
-  expandedItem,
-  toggle,
-  c,
-  trimester,
-}: {
-  poses: YogaPose[];
-  expandedItem: string | null;
-  toggle: (id: string) => void;
-  c: typeof colors.light;
-  trimester: 1 | 2 | 3;
-}) {
-  return (
-    <>
-      <View style={[styles.bannerCard, { backgroundColor: "#6db58a10", borderColor: "#6db58a30" }]}>
-        <Text style={styles.bannerEmoji}>🧘‍♀️</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.bannerTitle, { color: "#6db58a" }]}>
-            Trimester {trimester} Yoga
-          </Text>
-          <Text style={[styles.bannerText, { color: c.mutedForeground }]}>
-            {trimester === 1
-              ? "Gentle, grounding poses to ease nausea and establish a connection with your baby."
-              : trimester === 2
-              ? "Energising yet safe poses to build strength and prepare your body for birth."
-              : "Restorative and opening poses to ease pressure and prepare for labour."}
-          </Text>
-        </View>
-      </View>
+// ─── Yoga Tab ─────────────────────────────────────────────────────────────────
+function YogaTab({ poses }: { poses: YogaPose[] }) {
+  const c = colors.light;
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-      <View style={[styles.safetyNote, { backgroundColor: "#f0a50010", borderColor: "#f0a50030" }]}>
-        <Feather name="alert-triangle" size={14} color="#f0a500" />
-        <Text style={[styles.safetyNoteText, { color: c.mutedForeground }]}>
-          Always practice on an empty stomach, wear comfortable clothing, and listen to your body. Stop immediately if you feel pain, dizziness or breathlessness. Consult your doctor before starting.
+  return (
+    <ScrollView contentContainerStyle={styles.tabContent} showsVerticalScrollIndicator={false}>
+      <View style={[styles.infoBox, { backgroundColor: "#e8f4f0", borderColor: "#6db58a" }]}>
+        <Feather name="info" size={14} color="#6db58a" />
+        <Text style={[styles.infoText, { color: "#3a7a5c" }]}>
+          Always practice with a certified prenatal yoga instructor for first sessions. Stop if any pose causes discomfort.
         </Text>
       </View>
-
-      {poses.map((pose) => (
-        <TouchableOpacity
-          key={pose.id}
-          style={[styles.card, { backgroundColor: c.card, borderColor: expandedItem === pose.id ? "#6db58a" : c.border }]}
-          onPress={() => toggle(pose.id)}
-          activeOpacity={0.85}
-        >
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardEmoji}>{pose.emoji}</Text>
-            <View style={styles.cardHeaderText}>
-              <Text style={[styles.cardTitle, { color: c.foreground }]}>{pose.name}</Text>
-              <Text style={[styles.cardSubtitle, { color: "#6db58a" }]}>{pose.sanskritName}</Text>
-            </View>
-            <View style={styles.cardMeta}>
-              <View style={[styles.durationBadge, { backgroundColor: "#6db58a15" }]}>
-                <Feather name="clock" size={11} color="#6db58a" />
-                <Text style={[styles.durationText, { color: "#6db58a" }]}>{pose.duration}</Text>
+      {poses.map((pose) => {
+        const open = expanded === pose.id;
+        return (
+          <TouchableOpacity
+            key={pose.id}
+            style={styles.card}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setExpanded(open ? null : pose.id);
+            }}
+            activeOpacity={0.9}
+          >
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardEmoji}>{pose.emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>{pose.name}</Text>
+                <Text style={styles.cardSubtitle}>{pose.sanskritName} · {pose.duration}</Text>
               </View>
-              <Feather
-                name={expandedItem === pose.id ? "chevron-up" : "chevron-down"}
-                size={16}
-                color={c.mutedForeground}
-              />
+              <Feather name={open ? "chevron-up" : "chevron-down"} size={20} color={c.textSecondary} />
             </View>
-          </View>
-
-          {expandedItem === pose.id && (
-            <View style={styles.cardContent}>
-              <View style={[styles.separator, { backgroundColor: c.border }]} />
-
-              <Text style={[styles.sectionHeading, { color: "#6db58a" }]}>✨ Benefits</Text>
-              {pose.benefits.map((b, i) => (
-                <View key={i} style={styles.listItem}>
-                  <View style={[styles.listDot, { backgroundColor: "#6db58a" }]} />
-                  <Text style={[styles.listText, { color: c.foreground }]}>{b}</Text>
-                </View>
-              ))}
-
-              <Text style={[styles.sectionHeading, { color: "#6db58a", marginTop: 14 }]}>📋 How to do it</Text>
-              {pose.instructions.map((ins, i) => (
-                <View key={i} style={styles.listItem}>
-                  <View style={[styles.listNum, { backgroundColor: "#6db58a" }]}>
-                    <Text style={styles.listNumText}>{i + 1}</Text>
+            {open && (
+              <View style={styles.cardBody}>
+                <Text style={styles.sectionLabel}>Benefits</Text>
+                {pose.benefits.map((b, i) => (
+                  <View key={i} style={styles.bulletRow}>
+                    <Text style={styles.bullet}>•</Text>
+                    <Text style={styles.bulletText}>{b}</Text>
                   </View>
-                  <Text style={[styles.listText, { color: c.foreground }]}>{ins}</Text>
-                </View>
-              ))}
-
-              {pose.caution && (
-                <View style={[styles.cautionBox, { backgroundColor: "#f0a50010", borderColor: "#f0a50040" }]}>
-                  <Feather name="alert-circle" size={14} color="#f0a500" />
-                  <Text style={[styles.cautionText, { color: c.foreground }]}>{pose.caution}</Text>
-                </View>
-              )}
-            </View>
-          )}
-        </TouchableOpacity>
-      ))}
-    </>
+                ))}
+                <Text style={[styles.sectionLabel, { marginTop: 12 }]}>How To</Text>
+                {pose.instructions.map((step, i) => (
+                  <View key={i} style={styles.bulletRow}>
+                    <Text style={styles.bullet}>{i + 1}.</Text>
+                    <Text style={styles.bulletText}>{step}</Text>
+                  </View>
+                ))}
+                {pose.caution && (
+                  <View style={styles.cautionBox}>
+                    <Feather name="alert-triangle" size={13} color="#c0392b" />
+                    <Text style={styles.cautionText}>{pose.caution}</Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
   );
 }
 
-function MantraTab({
-  mantras,
-  expandedItem,
-  toggle,
-  c,
-}: {
-  mantras: Mantra[];
-  expandedItem: string | null;
-  toggle: (id: string) => void;
-  c: typeof colors.light;
-}) {
+// ─── Mantra Tab ───────────────────────────────────────────────────────────────
+function MantraTab({ mantras }: { mantras: Mantra[] }) {
+  const c = colors.light;
+  const [expanded, setExpanded] = useState<string | null>(null);
+
   return (
-    <>
-      <View style={[styles.bannerCard, { backgroundColor: "#9b6db510", borderColor: "#9b6db530" }]}>
-        <Text style={styles.bannerEmoji}>🕉️</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.bannerTitle, { color: "#9b6db5" }]}>Sacred Mantras</Text>
-          <Text style={[styles.bannerText, { color: c.mutedForeground }]}>
-            Sanskrit vibrations have been scientifically shown to induce calm, reduce cortisol, and create positive neural patterns for your growing baby.
-          </Text>
-        </View>
+    <ScrollView contentContainerStyle={styles.tabContent} showsVerticalScrollIndicator={false}>
+      <View style={[styles.infoBox, { backgroundColor: "#fff3e0", borderColor: "#f39c12" }]}>
+        <Feather name="volume-2" size={14} color="#f39c12" />
+        <Text style={[styles.infoText, { color: "#7d6608" }]}>
+          Tap any card to expand. Use the Play button to open YouTube or Spotify and listen directly.
+        </Text>
       </View>
-
-      {mantras.map((mantra) => (
-        <TouchableOpacity
-          key={mantra.id}
-          style={[styles.card, { backgroundColor: c.card, borderColor: expandedItem === mantra.id ? "#9b6db5" : c.border }]}
-          onPress={() => toggle(mantra.id)}
-          activeOpacity={0.85}
-        >
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardEmoji}>🪬</Text>
-            <View style={styles.cardHeaderText}>
-              <Text style={[styles.cardTitle, { color: c.foreground }]}>{mantra.title}</Text>
-              <Text style={[styles.cardSubtitle, { color: "#9b6db5" }]}>{mantra.timing}</Text>
-            </View>
-            <Feather
-              name={expandedItem === mantra.id ? "chevron-up" : "chevron-down"}
-              size={16}
-              color={c.mutedForeground}
-            />
-          </View>
-
-          {expandedItem === mantra.id && (
-            <View style={styles.cardContent}>
-              <View style={[styles.separator, { backgroundColor: c.border }]} />
-
-              <View style={[styles.sanskritBox, { backgroundColor: "#9b6db508", borderColor: "#9b6db530" }]}>
-                <Text style={[styles.sanskritText, { color: "#9b6db5" }]}>{mantra.sanskrit}</Text>
+      {mantras.map((m) => {
+        const open = expanded === m.id;
+        return (
+          <TouchableOpacity
+            key={m.id}
+            style={styles.card}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setExpanded(open ? null : m.id);
+            }}
+            activeOpacity={0.9}
+          >
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardEmoji}>🕉️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>{m.title}</Text>
+                <Text style={styles.cardSubtitle} numberOfLines={1}>{m.purpose}</Text>
               </View>
-
-              <Text style={[styles.sectionHeading, { color: "#9b6db5" }]}>🔤 Transliteration</Text>
-              <Text style={[styles.translitText, { color: c.foreground }]}>{mantra.transliteration}</Text>
-
-              <Text style={[styles.sectionHeading, { color: "#9b6db5", marginTop: 14 }]}>💡 Meaning</Text>
-              <Text style={[styles.meaningText, { color: c.foreground }]}>{mantra.meaning}</Text>
-
-              <View style={[styles.purposeBox, { backgroundColor: "#9b6db510", borderColor: "#9b6db530" }]}>
-                <Feather name="star" size={13} color="#9b6db5" />
-                <Text style={[styles.purposeText, { color: c.foreground }]}>
-                  <Text style={{ fontWeight: "700", color: "#9b6db5" }}>Purpose: </Text>
-                  {mantra.purpose}
-                </Text>
+              <View style={styles.headerRight}>
+                <PlayButton playUrl={m.playUrl} spotifyUrl={m.spotifyUrl} small />
+                <Feather
+                  name={open ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color={c.textSecondary}
+                  style={{ marginLeft: 6 }}
+                />
               </View>
             </View>
-          )}
-        </TouchableOpacity>
-      ))}
-    </>
+            {open && (
+              <View style={styles.cardBody}>
+                {m.sanskrit && (
+                  <>
+                    <Text style={styles.sectionLabel}>Mantra</Text>
+                    <Text style={styles.sanskritText}>{m.sanskrit}</Text>
+                  </>
+                )}
+                {m.transliteration && (
+                  <>
+                    <Text style={[styles.sectionLabel, { marginTop: 10 }]}>Transliteration</Text>
+                    <Text style={styles.transliterationText}>{m.transliteration}</Text>
+                  </>
+                )}
+                <Text style={[styles.sectionLabel, { marginTop: 10 }]}>Meaning</Text>
+                <Text style={styles.meaningText}>{m.meaning}</Text>
+                <View style={styles.timingRow}>
+                  <Feather name="clock" size={13} color="#9b6db5" />
+                  <Text style={styles.timingText}>{m.timing}</Text>
+                </View>
+                <View style={styles.playRowFull}>
+                  <PlayButton playUrl={m.playUrl} spotifyUrl={m.spotifyUrl} />
+                </View>
+              </View>
+            )}
+          </TouchableOpacity>
+        );
+      })}
+    </ScrollView>
   );
 }
 
-function GarbhasanskarTab({
-  activities,
-  expandedItem,
-  toggle,
-  c,
-}: {
-  activities: GarbhasanskarActivity[];
-  expandedItem: string | null;
-  toggle: (id: string) => void;
-  c: typeof colors.light;
-}) {
-  const categoryColor: Record<string, string> = {
+// ─── Garbhasanskar Tab ────────────────────────────────────────────────────────
+function GarbhasanskarTab({ activities }: { activities: GarbhasanskarActivity[] }) {
+  const c = colors.light;
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const categoryColors: Record<string, string> = {
     music: "#9b6db5",
     reading: "#5b8fd6",
     meditation: "#6db58a",
     communication: "#e8608a",
     art: "#ef6c4b",
-    nature: "#6db58a",
+    nature: "#3a7a5c",
   };
 
   return (
-    <>
-      <View style={[styles.bannerCard, { backgroundColor: "#f0a50010", borderColor: "#f0a50030" }]}>
-        <Text style={styles.bannerEmoji}>🌸</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.bannerTitle, { color: "#f0a500" }]}>Garbhasanskar</Text>
-          <Text style={[styles.bannerText, { color: c.mutedForeground }]}>
-            The ancient practice of nurturing your baby's mind, personality and soul while still in the womb — through music, stories, meditation and mindful living.
-          </Text>
-        </View>
+    <ScrollView contentContainerStyle={styles.tabContent} showsVerticalScrollIndicator={false}>
+      <View style={[styles.infoBox, { backgroundColor: "#f3e5f5", borderColor: "#9b6db5" }]}>
+        <Feather name="info" size={14} color="#9b6db5" />
+        <Text style={[styles.infoText, { color: "#6a1b9a" }]}>
+          Garbhasanskar is the practice of nurturing your baby's mind and soul through positive stimulation before birth.
+        </Text>
       </View>
-
       {activities.map((activity) => {
-        const accent = categoryColor[activity.category] || "#e8608a";
+        const open = expanded === activity.id;
+        const catColor = categoryColors[activity.category] || c.primary;
         return (
           <TouchableOpacity
             key={activity.id}
-            style={[styles.card, { backgroundColor: c.card, borderColor: expandedItem === activity.id ? accent : c.border }]}
-            onPress={() => toggle(activity.id)}
-            activeOpacity={0.85}
+            style={styles.card}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setExpanded(open ? null : activity.id);
+            }}
+            activeOpacity={0.9}
           >
             <View style={styles.cardHeader}>
               <Text style={styles.cardEmoji}>{activity.emoji}</Text>
-              <View style={styles.cardHeaderText}>
-                <Text style={[styles.cardTitle, { color: c.foreground }]}>{activity.title}</Text>
-                <Text style={[styles.cardSubtitle, { color: accent }]}>{activity.duration}</Text>
-              </View>
-              <View style={[styles.categoryBadge, { backgroundColor: accent + "18" }]}>
-                <Text style={[styles.categoryBadgeText, { color: accent }]}>
-                  {activity.category}
-                </Text>
-              </View>
-              <Feather
-                name={expandedItem === activity.id ? "chevron-up" : "chevron-down"}
-                size={16}
-                color={c.mutedForeground}
-              />
-            </View>
-
-            {expandedItem === activity.id && (
-              <View style={styles.cardContent}>
-                <View style={[styles.separator, { backgroundColor: c.border }]} />
-                <Text style={[styles.activityDesc, { color: c.foreground }]}>{activity.description}</Text>
-                <View style={[styles.tipBox, { backgroundColor: accent + "12", borderColor: accent + "30" }]}>
-                  <Feather name="lightbulb" size={14} color={accent} />
-                  <Text style={[styles.tipText, { color: c.foreground }]}>
-                    <Text style={{ fontWeight: "700", color: accent }}>Tip: </Text>
-                    {activity.tip}
-                  </Text>
+              <View style={{ flex: 1 }}>
+                <View style={styles.titleRow}>
+                  <Text style={[styles.cardTitle, { flexShrink: 1 }]}>{activity.title}</Text>
+                  <View style={[styles.categoryBadge, { backgroundColor: catColor + "22" }]}>
+                    <Text style={[styles.categoryText, { color: catColor }]}>{activity.category}</Text>
+                  </View>
                 </View>
+                <Text style={styles.cardSubtitle}>{activity.duration}</Text>
+              </View>
+              <View style={styles.headerRight}>
+                {activity.playUrl && (
+                  <PlayButton playUrl={activity.playUrl} spotifyUrl={activity.spotifyUrl} small />
+                )}
+                <Feather
+                  name={open ? "chevron-up" : "chevron-down"}
+                  size={20}
+                  color={c.textSecondary}
+                  style={{ marginLeft: 6 }}
+                />
+              </View>
+            </View>
+            {open && (
+              <View style={styles.cardBody}>
+                <Text style={styles.descriptionText}>{activity.description}</Text>
+                <View style={[styles.tipBox, { borderLeftColor: catColor }]}>
+                  <Text style={[styles.tipLabel, { color: catColor }]}>💡 Tip</Text>
+                  <Text style={styles.tipText}>{activity.tip}</Text>
+                </View>
+                {activity.playUrl && (
+                  <View style={styles.playRowFull}>
+                    <PlayButton playUrl={activity.playUrl} spotifyUrl={activity.spotifyUrl} />
+                  </View>
+                )}
               </View>
             )}
           </TouchableOpacity>
         );
       })}
-    </>
+    </ScrollView>
   );
 }
 
-function PositivityTab({
-  items,
-  expandedItem,
-  toggle,
-  c,
-}: {
-  items: PositivityItem[];
-  expandedItem: string | null;
-  toggle: (id: string) => void;
-  c: typeof colors.light;
-}) {
-  const typeColor: Record<string, string> = {
+// ─── Positivity Tab ───────────────────────────────────────────────────────────
+function PositivityTab({ items }: { items: PositivityItem[] }) {
+  const c = colors.light;
+  const [active, setActive] = useState<string | null>(items[0]?.id ?? null);
+
+  const typeColors: Record<string, string> = {
     affirmation: "#e8608a",
-    gratitude: "#f0a500",
+    gratitude: "#6db58a",
     visualization: "#9b6db5",
     breath: "#5b8fd6",
   };
-
-  const typeLabel: Record<string, string> = {
-    affirmation: "Affirmation",
-    gratitude: "Gratitude",
-    visualization: "Visualisation",
-    breath: "Breathwork",
+  const typeIcons: Record<string, string> = {
+    affirmation: "heart",
+    gratitude: "sun",
+    visualization: "eye",
+    breath: "wind",
   };
 
   return (
-    <>
-      <View style={[styles.bannerCard, { backgroundColor: "#e8608a10", borderColor: "#e8608a30" }]}>
-        <Text style={styles.bannerEmoji}>☀️</Text>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.bannerTitle, { color: "#e8608a" }]}>Mind & Heart</Text>
-          <Text style={[styles.bannerText, { color: c.mutedForeground }]}>
-            Your thoughts, emotions and peace of mind directly influence your baby's environment. Nourish your inner world every single day.
-          </Text>
-        </View>
-      </View>
-
+    <ScrollView contentContainerStyle={styles.tabContent} showsVerticalScrollIndicator={false}>
       {items.map((item) => {
-        const accent = typeColor[item.type] || "#e8608a";
+        const open = active === item.id;
+        const col = typeColors[item.type] || c.primary;
+        const icon = (typeIcons[item.type] || "star") as any;
         return (
           <TouchableOpacity
             key={item.id}
-            style={[styles.card, { backgroundColor: c.card, borderColor: expandedItem === item.id ? accent : c.border }]}
-            onPress={() => toggle(item.id)}
-            activeOpacity={0.85}
+            style={[styles.card, open && { borderColor: col, borderWidth: 1.5 }]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setActive(open ? null : item.id);
+            }}
+            activeOpacity={0.9}
           >
             <View style={styles.cardHeader}>
               <Text style={styles.cardEmoji}>{item.emoji}</Text>
-              <View style={styles.cardHeaderText}>
-                <Text style={[styles.cardTitle, { color: c.foreground }]}>{item.title}</Text>
-                <Text style={[styles.cardSubtitle, { color: accent }]}>{typeLabel[item.type]}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cardTitle}>{item.title}</Text>
+                <View style={styles.titleRow}>
+                  <Feather name={icon} size={12} color={col} />
+                  <Text style={[styles.typeText, { color: col }]}>
+                    {" "}{item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+                  </Text>
+                </View>
               </View>
-              <Feather
-                name={expandedItem === item.id ? "chevron-up" : "chevron-down"}
-                size={16}
-                color={c.mutedForeground}
-              />
+              <Feather name={open ? "chevron-up" : "chevron-down"} size={20} color={c.textSecondary} />
             </View>
-
-            {expandedItem === item.id && (
-              <View style={styles.cardContent}>
-                <View style={[styles.separator, { backgroundColor: c.border }]} />
-                <View style={[styles.positivityContent, { backgroundColor: accent + "08", borderColor: accent + "25" }]}>
-                  <Text style={[styles.positivityText, { color: c.foreground }]}>{item.content}</Text>
+            {open && (
+              <View style={styles.cardBody}>
+                <View style={[styles.positivityContent, { backgroundColor: col + "11" }]}>
+                  <Text style={[styles.positivityText, { color: c.text }]}>{item.content}</Text>
                 </View>
               </View>
             )}
           </TouchableOpacity>
         );
       })}
-    </>
+    </ScrollView>
+  );
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
+export default function SoulfulScreen() {
+  const insets = useSafeAreaInsets();
+  const c = colors.light;
+  const { currentWeek, country } = usePregnancy();
+
+  const trimester = getTrimesterFromWeek(currentWeek);
+  const region = getRegionForCountry(country);
+
+  const [activeTab, setActiveTab] = useState<Tab>("mantra");
+
+  const poses = getYogaForTrimester(trimester);
+  const mantras = getMantrasForRegion(trimester, region);
+  const activities = getActivitiesForRegion(trimester, region);
+  const positivity = getPositivityForRegion(trimester, region);
+
+  const tabs: { id: Tab; label: string; icon: string; color: string }[] = [
+    { id: "yoga", label: "Yoga", icon: "activity", color: "#6db58a" },
+    { id: "mantra", label: "Mantra", icon: "volume-2", color: "#9b6db5" },
+    { id: "garbhasanskar", label: "Garbha", icon: "music", color: "#ef6c4b" },
+    { id: "positivity", label: "Peace", icon: "sun", color: "#e8608a" },
+  ];
+
+  const regionLabels: Record<string, string> = {
+    india: "🇮🇳 Indian",
+    western: "🌍 Western",
+    islamic: "☪️ Islamic",
+    eastasian: "🏮 East Asian",
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: c.background }]}>
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: "#9b6db5" }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <Feather name="arrow-left" size={22} color="#fff" />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Traditional & Soulful</Text>
+          <View style={styles.headerMeta}>
+            <Text style={styles.headerSubtitle}>Week {currentWeek} · T{trimester}</Text>
+            <View style={styles.regionBadge}>
+              <Text style={styles.regionBadgeText}>{regionLabels[region] ?? "🌏 Indian"}</Text>
+            </View>
+          </View>
+        </View>
+        <TouchableOpacity
+          onPress={() => router.push("/settings" as any)}
+          style={styles.settingsBtn}
+        >
+          <Feather name="settings" size={18} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Tab Bar */}
+      <View style={[styles.tabBar, { backgroundColor: c.surface }]}>
+        {tabs.map((tab) => {
+          const active = activeTab === tab.id;
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              style={[styles.tabItem, active && { borderBottomColor: tab.color, borderBottomWidth: 2.5 }]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setActiveTab(tab.id);
+              }}
+              activeOpacity={0.8}
+            >
+              <Feather name={tab.icon as any} size={16} color={active ? tab.color : c.textSecondary} />
+              <Text
+                style={[
+                  styles.tabLabel,
+                  { color: active ? tab.color : c.textSecondary, fontWeight: active ? "700" : "500" },
+                ]}
+              >
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Tab Content */}
+      {activeTab === "yoga" && <YogaTab poses={poses} />}
+      {activeTab === "mantra" && <MantraTab mantras={mantras} />}
+      {activeTab === "garbhasanskar" && <GarbhasanskarTab activities={activities} />}
+      {activeTab === "positivity" && <PositivityTab items={positivity} />}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+
   header: {
-    paddingHorizontal: 20, paddingBottom: 12,
-    borderBottomLeftRadius: 24, borderBottomRightRadius: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    gap: 12,
   },
-  headerRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 12,
+  backBtn: { padding: 4 },
+  settingsBtn: { padding: 4 },
+  headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
+  headerMeta: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 },
+  headerSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 12 },
+  regionBadge: {
     backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center", justifyContent: "center",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
-  headerText: { flex: 1 },
-  headerTitle: { fontSize: 22, fontWeight: "800", color: "#fff" },
-  headerSubtitle: { fontSize: 13, color: "rgba(255,255,255,0.8)", fontWeight: "500" },
-  tabBarContent: { gap: 6, paddingBottom: 12 },
-  tab: {
-    flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 14, paddingVertical: 9,
-    borderRadius: 12, gap: 6,
+  regionBadgeText: { color: "#fff", fontSize: 11, fontWeight: "600" },
+
+  tabBar: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2 },
+    }),
+    elevation: 1,
   },
-  tabText: { fontSize: 12, fontWeight: "600" },
-  bannerCard: {
-    flexDirection: "row", alignItems: "flex-start",
-    marginHorizontal: 16, marginBottom: 12,
-    padding: 16, borderRadius: 16, borderWidth: 1, gap: 12,
-  },
-  bannerEmoji: { fontSize: 28 },
-  bannerTitle: { fontSize: 15, fontWeight: "800", marginBottom: 4 },
-  bannerText: { fontSize: 13, lineHeight: 18 },
-  safetyNote: {
-    flexDirection: "row", alignItems: "flex-start",
-    marginHorizontal: 16, marginBottom: 12,
-    padding: 12, borderRadius: 12, borderWidth: 1, gap: 8,
-  },
-  safetyNoteText: { flex: 1, fontSize: 12, lineHeight: 17 },
+  tabItem: { flex: 1, alignItems: "center", paddingVertical: 10, gap: 3 },
+  tabLabel: { fontSize: 11 },
+
+  tabContent: { padding: 16, gap: 12, paddingBottom: 40 },
+
   card: {
-    marginHorizontal: 16, marginBottom: 10,
-    borderRadius: 16, borderWidth: 1.5,
-    overflow: "hidden",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 8 },
+    }),
+    elevation: 2,
+    borderWidth: 0.5,
+    borderColor: "rgba(0,0,0,0.06)",
   },
-  cardHeader: {
-    flexDirection: "row", alignItems: "center",
-    padding: 16, gap: 12,
-  },
+  cardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   cardEmoji: { fontSize: 26 },
-  cardHeaderText: { flex: 1 },
-  cardTitle: { fontSize: 15, fontWeight: "700", marginBottom: 2 },
-  cardSubtitle: { fontSize: 12, fontWeight: "600" },
-  cardMeta: { alignItems: "flex-end", gap: 6 },
-  durationBadge: {
-    flexDirection: "row", alignItems: "center",
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, gap: 4,
+  cardTitle: { fontSize: 15, fontWeight: "700", color: "#1a1a1a" },
+  cardSubtitle: { fontSize: 12, color: "#888", marginTop: 2 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  headerRight: { flexDirection: "row", alignItems: "center" },
+
+  cardBody: { marginTop: 14, gap: 6 },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#9b6db5",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
-  durationText: { fontSize: 11, fontWeight: "600" },
-  cardContent: { paddingHorizontal: 16, paddingBottom: 16 },
-  separator: { height: 1, marginBottom: 14 },
-  sectionHeading: { fontSize: 13, fontWeight: "700", marginBottom: 8 },
-  listItem: { flexDirection: "row", alignItems: "flex-start", gap: 10, marginBottom: 6 },
-  listDot: { width: 6, height: 6, borderRadius: 3, marginTop: 6 },
-  listNum: {
-    width: 20, height: 20, borderRadius: 6,
-    alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2,
-  },
-  listNumText: { color: "#fff", fontSize: 11, fontWeight: "700" },
-  listText: { flex: 1, fontSize: 13, lineHeight: 20 },
+  bulletRow: { flexDirection: "row", gap: 8 },
+  bullet: { fontSize: 14, color: "#555", lineHeight: 22, minWidth: 16 },
+  bulletText: { fontSize: 14, color: "#444", lineHeight: 22, flex: 1 },
   cautionBox: {
-    flexDirection: "row", alignItems: "flex-start",
-    padding: 12, borderRadius: 12, borderWidth: 1, gap: 8, marginTop: 12,
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: "#fde8e8",
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+    alignItems: "flex-start",
   },
-  cautionText: { flex: 1, fontSize: 13, lineHeight: 18 },
-  sanskritBox: {
-    padding: 16, borderRadius: 14, borderWidth: 1, marginBottom: 14,
+  cautionText: { fontSize: 13, color: "#c0392b", flex: 1, lineHeight: 19 },
+
+  sanskritText: {
+    fontSize: 16,
+    color: "#9b6db5",
+    lineHeight: 28,
+    fontWeight: "600",
+    textAlign: "center",
   },
-  sanskritText: { fontSize: 15, lineHeight: 26, textAlign: "center" },
-  translitText: { fontSize: 14, lineHeight: 22, fontStyle: "italic", marginBottom: 4 },
-  meaningText: { fontSize: 13, lineHeight: 20 },
-  purposeBox: {
-    flexDirection: "row", alignItems: "flex-start",
-    padding: 12, borderRadius: 12, borderWidth: 1, gap: 8, marginTop: 12,
-  },
-  purposeText: { flex: 1, fontSize: 13, lineHeight: 18 },
-  categoryBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  categoryBadgeText: { fontSize: 11, fontWeight: "700", textTransform: "capitalize" },
-  activityDesc: { fontSize: 13, lineHeight: 20, marginBottom: 12 },
+  transliterationText: { fontSize: 13, color: "#555", fontStyle: "italic", lineHeight: 22 },
+  meaningText: { fontSize: 14, color: "#444", lineHeight: 22 },
+  timingRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 },
+  timingText: { fontSize: 12, color: "#9b6db5", fontStyle: "italic" },
+
+  categoryBadge: { borderRadius: 8, paddingHorizontal: 7, paddingVertical: 2 },
+  categoryText: { fontSize: 10, fontWeight: "700", textTransform: "uppercase" },
+  descriptionText: { fontSize: 14, color: "#444", lineHeight: 22 },
   tipBox: {
-    flexDirection: "row", alignItems: "flex-start",
-    padding: 12, borderRadius: 12, borderWidth: 1, gap: 8,
+    borderLeftWidth: 3,
+    paddingLeft: 12,
+    paddingVertical: 8,
+    backgroundColor: "#f8f8f8",
+    borderRadius: 6,
+    marginTop: 8,
   },
-  tipText: { flex: 1, fontSize: 13, lineHeight: 18 },
-  positivityContent: {
-    padding: 16, borderRadius: 14, borderWidth: 1,
+  tipLabel: { fontSize: 11, fontWeight: "700", marginBottom: 4 },
+  tipText: { fontSize: 13, color: "#555", lineHeight: 20 },
+
+  typeText: { fontSize: 12, fontWeight: "600" },
+  positivityContent: { borderRadius: 12, padding: 14 },
+  positivityText: { fontSize: 15, lineHeight: 26, fontStyle: "italic" },
+
+  infoBox: {
+    flexDirection: "row",
+    gap: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+    alignItems: "flex-start",
   },
-  positivityText: { fontSize: 14, lineHeight: 24 },
+  infoText: { fontSize: 12, lineHeight: 18, flex: 1 },
+
+  // ── Play buttons
+  playBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "#9b6db5",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  playBtnSmall: { paddingHorizontal: 8, paddingVertical: 4 },
+  playBtnYt: { backgroundColor: "#c0392b" },
+  playBtnSpotify: { backgroundColor: "#1db954" },
+  playBtnText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+  playBtnTextSmall: { fontSize: 11 },
+  playBtnClose: { padding: 4 },
+  playRow: { flexDirection: "row", gap: 8, alignItems: "center" },
+  playRowFull: { marginTop: 10 },
 });
