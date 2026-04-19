@@ -12,14 +12,15 @@ if [ -z "$GITHUB_REPO_URL" ]; then
   exit 1
 fi
 
-REMOTE_URL="https://${GITHUB_TOKEN}@${GITHUB_REPO_URL#https://}"
-
-git remote remove github 2>/dev/null || true
-git remote add github "$REMOTE_URL"
-
+REPO_HOST="${GITHUB_REPO_URL#https://}"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
 echo "Syncing branch '$BRANCH' to GitHub..."
 
-git push github "$BRANCH" --force 2>&1 | grep -v "https://"
+GIT_ASKPASS=/bin/true \
+  git -c "credential.helper=" \
+      -c "url.https://x-token-auth:${GITHUB_TOKEN}@${REPO_HOST}.insteadOf=https://${REPO_HOST}" \
+      push "https://${REPO_HOST}" "${BRANCH}:${BRANCH}" --force \
+      2>&1 | grep -v "https://"
 
 echo "Sync complete."
