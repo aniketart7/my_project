@@ -20,6 +20,6 @@ git remote add github "$REMOTE_URL"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 echo "Syncing branch '$BRANCH' to GitHub..."
 
-git push github "$BRANCH" --force-with-lease 2>&1 | grep -v "https://"
+git push github "$BRANCH" --force 2>&1 | grep -v "https://"
 
 echo "Sync complete."

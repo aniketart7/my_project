@@ -1,4 +1,4 @@
-name: Sync to GitHub
+name: Verify Sync
 
 on:
   push:
@@ -6,17 +6,16 @@ on:
       - '**'
 
 jobs:
-  sync:
-    name: Verify sync
+  verify:
+    name: Confirm repository is in sync
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Confirm latest commit
+      - name: Show latest commit
         run: |
-          echo "Repository is in sync."
-          echo "Latest commit: $(git log -1 --oneline)"
+          echo "Repository successfully synced."
           echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Message: ${{ github.event.head_commit.message }}"
