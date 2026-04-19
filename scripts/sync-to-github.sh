@@ -38,11 +38,17 @@ if push_to_github; then
   exit 0
 fi
 
+PROTECTED_BRANCHES="main"
+if echo "$PROTECTED_BRANCHES" | tr ',' '\n' | grep -qx "$TARGET_BRANCH"; then
+  echo "ERROR: Push to GitHub failed. Force-push is permanently disabled for the protected branch '$TARGET_BRANCH'."
+  exit 1
+fi
+
 if [ "${GITHUB_SYNC_FORCE:-false}" = "true" ]; then
   echo "Normal push failed and GITHUB_SYNC_FORCE=true — retrying with --force ..."
   push_to_github "--force"
   echo "Sync complete (forced)."
 else
-  echo "ERROR: Push to GitHub failed. Set GITHUB_SYNC_FORCE=true to allow force-push."
+  echo "ERROR: Push to GitHub failed. Set GITHUB_SYNC_FORCE=true to allow force-push (not available for protected branches)."
   exit 1
 fi
