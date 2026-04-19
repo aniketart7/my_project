@@ -1,28 +1,54 @@
 {
   "expo": {
-    "name": "Pregnancy Journey",
-    "slug": "mobile",
+    "name": "MamaJourney",
+    "slug": "mama-journey",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
+    "scheme": "mamajourney",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "owner": "YOUR_EXPO_USERNAME",
+
     "splash": {
       "image": "./assets/images/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#fff8f9"
     },
+
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.pregnancy.journey"
+      "bundleIdentifier": "com.mamajourney.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used to scan health documents and reports.",
+        "NSPhotoLibraryUsageDescription": "Used to upload health records and scan documents.",
+        "NSMicrophoneUsageDescription": "Used for video playback in the Soulful section.",
+        "NSLocationWhenInUseUsageDescription": "Used to show nearby hospitals and clinics."
+      }
     },
+
     "android": {
-      "package": "com.pregnancy.journey"
+      "package": "com.mamajourney.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#fff8f9"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
     },
+
     "web": {
       "favicon": "./assets/images/icon.png"
     },
+
     "plugins": [
       [
         "expo-router",
@@ -31,11 +57,31 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow MamaJourney to access your photos to upload health records.",
+          "cameraPermission": "Allow MamaJourney to use the camera to scan documents."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow MamaJourney to show nearby hospitals and clinics."
+        }
+      ]
     ],
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
     }
   }
 }
