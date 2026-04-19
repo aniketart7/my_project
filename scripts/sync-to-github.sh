@@ -13,26 +13,31 @@ if [ -z "$GITHUB_REPO_URL" ]; then
 fi
 
 REPO_HOST="${GITHUB_REPO_URL#https://}"
-BRANCH=$(git rev-parse --abbrev-ref HEAD)
+LOCAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+TARGET_BRANCH="${GITHUB_SYNC_BRANCH:-main}"
 
-echo "Syncing branch '$BRANCH' to GitHub..."
+echo "Syncing local '$LOCAL_BRANCH' -> GitHub '$TARGET_BRANCH' at $GITHUB_REPO_URL ..."
 
 push_to_github() {
-  local extra_flags="$1"
+  local extra_flags="$*"
   GIT_TERMINAL_PROMPT=0 \
     git \
       -c credential.helper= \
       -c "url.https://x-token-auth:${GITHUB_TOKEN}@${REPO_HOST}.insteadOf=https://${REPO_HOST}" \
-      push "https://${REPO_HOST}" "${BRANCH}:${BRANCH}" $extra_flags 2>&1 \
+      push "https://${REPO_HOST}" "${LOCAL_BRANCH}:${TARGET_BRANCH}" $extra_flags 2>&1 \
     | sed "s|${GITHUB_TOKEN}|***|g"
 }
 
-if push_to_github ""; then
+if push_to_github; then
   echo "Sync complete."
   exit 0
 fi
 
-echo "Normal push failed; Replit is the source of truth — retrying with force push..."
-push_to_github "--force"
-
-echo "Sync complete."
+if [ "${GITHUB_SYNC_FORCE:-false}" = "true" ]; then
+  echo "Normal push failed and GITHUB_SYNC_FORCE=true — retrying with --force ..."
+  push_to_github "--force"
+  echo "Sync complete (forced)."
+else
+  echo "ERROR: Push to GitHub failed. Set GITHUB_SYNC_FORCE=true to allow force-push."
+  exit 1
+fi
