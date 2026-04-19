@@ -173,56 +173,62 @@ export default function HomeScreen() {
         <Text style={[styles.highlightText, { color: c.foreground }]}>{weekData.weekHighlight}</Text>
       </View>
 
-      {/* ─── QUICK NAV GRID ─── */}
+      {/* ─── QUICK NAV GRID 2×2 ─── */}
       <Text style={[styles.sectionHeading, { color: c.mutedForeground }]}>QUICK ACCESS</Text>
       <View style={styles.navGrid}>
-        <TouchableOpacity
-          style={[styles.navCard, { backgroundColor: "#e8608a12", borderColor: "#e8608a30" }]}
-          onPress={() => router.push({ pathname: "/week/[week]", params: { week: currentWeek.toString() } })}
-          activeOpacity={0.8}
-        >
-          <View style={[styles.navCardIcon, { backgroundColor: "#e8608a20" }]}>
-            <Feather name="heart" size={22} color="#e8608a" />
-          </View>
-          <Text style={[styles.navCardTitle, { color: "#e8608a" }]}>Mom</Text>
-          <Text style={[styles.navCardSub, { color: "#e8608a80" }]}>Week guide</Text>
-        </TouchableOpacity>
+        {/* Row 1 */}
+        <View style={styles.navRow}>
+          <TouchableOpacity
+            style={[styles.navCard, { backgroundColor: "#e8608a12", borderColor: "#e8608a30" }]}
+            onPress={() => router.push({ pathname: "/week/[week]", params: { week: currentWeek.toString() } })}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.navCardIcon, { backgroundColor: "#e8608a20" }]}>
+              <Feather name="heart" size={22} color="#e8608a" />
+            </View>
+            <Text style={[styles.navCardTitle, { color: "#e8608a" }]}>Mom</Text>
+            <Text style={[styles.navCardSub, { color: "#e8608a80" }]}>Week guide</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.navCard, { backgroundColor: "#5b8fd612", borderColor: "#5b8fd630" }]}
-          onPress={() => router.push({ pathname: "/week/[week]", params: { week: currentWeek.toString() } })}
-          activeOpacity={0.8}
-        >
-          <View style={[styles.navCardIcon, { backgroundColor: "#5b8fd620" }]}>
-            <Feather name="user" size={22} color="#5b8fd6" />
-          </View>
-          <Text style={[styles.navCardTitle, { color: "#5b8fd6" }]}>Dad</Text>
-          <Text style={[styles.navCardSub, { color: "#5b8fd680" }]}>Actions & tips</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.navCard, { backgroundColor: "#5b8fd612", borderColor: "#5b8fd630" }]}
+            onPress={() => router.push({ pathname: "/week/[week]", params: { week: currentWeek.toString() } })}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.navCardIcon, { backgroundColor: "#5b8fd620" }]}>
+              <Feather name="user" size={22} color="#5b8fd6" />
+            </View>
+            <Text style={[styles.navCardTitle, { color: "#5b8fd6" }]}>Dad</Text>
+            <Text style={[styles.navCardSub, { color: "#5b8fd680" }]}>Actions & tips</Text>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={[styles.navCard, { backgroundColor: "#6db58a12", borderColor: "#6db58a30" }]}
-          onPress={() => router.push("/health")}
-          activeOpacity={0.8}
-        >
-          <View style={[styles.navCardIcon, { backgroundColor: "#6db58a20" }]}>
-            <Feather name="activity" size={22} color="#6db58a" />
-          </View>
-          <Text style={[styles.navCardTitle, { color: "#6db58a" }]}>Health</Text>
-          <Text style={[styles.navCardSub, { color: "#6db58a80" }]}>Track vitals</Text>
-        </TouchableOpacity>
+        {/* Row 2 */}
+        <View style={styles.navRow}>
+          <TouchableOpacity
+            style={[styles.navCard, { backgroundColor: "#6db58a12", borderColor: "#6db58a30" }]}
+            onPress={() => router.push("/health")}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.navCardIcon, { backgroundColor: "#6db58a20" }]}>
+              <Feather name="activity" size={22} color="#6db58a" />
+            </View>
+            <Text style={[styles.navCardTitle, { color: "#6db58a" }]}>Health</Text>
+            <Text style={[styles.navCardSub, { color: "#6db58a80" }]}>Track vitals</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.navCard, { backgroundColor: "#9b6db512", borderColor: "#9b6db530" }]}
-          onPress={() => router.push("/soulful")}
-          activeOpacity={0.8}
-        >
-          <View style={[styles.navCardIcon, { backgroundColor: "#9b6db520" }]}>
-            <Feather name="wind" size={22} color="#9b6db5" />
-          </View>
-          <Text style={[styles.navCardTitle, { color: "#9b6db5" }]}>Soulful</Text>
-          <Text style={[styles.navCardSub, { color: "#9b6db580" }]}>Yoga & mantra</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.navCard, { backgroundColor: "#9b6db512", borderColor: "#9b6db530" }]}
+            onPress={() => router.push("/soulful")}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.navCardIcon, { backgroundColor: "#9b6db520" }]}>
+              <Feather name="wind" size={22} color="#9b6db5" />
+            </View>
+            <Text style={[styles.navCardTitle, { color: "#9b6db5" }]}>Soulful</Text>
+            <Text style={[styles.navCardSub, { color: "#9b6db580" }]}>Yoga & mantra</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* ─── BABY THIS WEEK ─── */}
@@ -472,14 +478,15 @@ const styles = StyleSheet.create({
 
   // ── Nav Grid ──────────────────────────────────────────
   navGrid: {
+    marginHorizontal: 16,
+    gap: 12,
+  },
+  navRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: 12,
-    gap: 10,
+    gap: 12,
   },
   navCard: {
-    width: "46%",
-    marginHorizontal: "2%",
+    flex: 1,
     borderRadius: 18,
     borderWidth: 1,
     padding: 16,
