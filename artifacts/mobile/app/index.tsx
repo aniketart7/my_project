@@ -21,7 +21,7 @@ import { getPersonalizedDiet, DIETARY_LABELS, DIETARY_COLORS } from "@/data/diet
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const c = colors.light;
-  const { currentWeek, momName, dadName, babyName, dietaryPreference, dueDate } = usePregnancy();
+  const { currentWeek, momName, dadName, babyName, dietaryPreference, dueDate, daysToGo } = usePregnancy();
   const weekData = getWeekData(currentWeek);
   const personalizedDiet = weekData
     ? getPersonalizedDiet(weekData.momDiet, currentWeek, dietaryPreference)
@@ -137,7 +137,27 @@ export default function HomeScreen() {
         </View>
       )}
 
-      <FetalVisual weekData={weekData} />
+      <View style={styles.heroCompact}>
+        <View style={styles.heroLeft}>
+          <FetalVisual weekData={weekData} />
+        </View>
+        <View style={styles.heroRight}>
+          <View style={[styles.countdownCard, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Feather name="calendar" size={14} color="#9b6db5" />
+            <Text style={[styles.countdownLabel, { color: c.mutedForeground }]}>Days to go</Text>
+            <Text style={[styles.countdownValue, { color: "#9b6db5" }]}>
+              {daysToGo ?? "—"}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.heroShortcut, { backgroundColor: "#9b6db510", borderColor: "#9b6db530" }]}
+            onPress={() => router.push("/settings")}
+          >
+            <Feather name="sliders" size={14} color="#9b6db5" />
+            <Text style={[styles.heroShortcutText, { color: "#9b6db5" }]}>Personalize</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       <View style={styles.sectionTitle}>
         <View style={[styles.sectionDot, { backgroundColor: "#e8608a" }]} />
@@ -174,39 +194,53 @@ export default function HomeScreen() {
         collapsed
       />
 
-      <View style={[styles.sectionTitle, { marginTop: 8 }]}>
-        <View style={[styles.sectionDot, { backgroundColor: "#5b8fd6" }]} />
-        <Text style={[styles.sectionTitleText, { color: c.foreground }]}>
-          {dadName ? `${dadName}'s Guide` : "Dad's Guide"}
-        </Text>
+      <View style={styles.quickPeekRow}>
+          <TouchableOpacity
+            style={[styles.quickPeekCard, { borderColor: "#5b8fd630", backgroundColor: "#5b8fd610" }]}
+            onPress={() => router.push({ pathname: "/week/[week]", params: { week: currentWeek.toString() } })}
+          >
+          <Feather name="calendar" size={16} color="#5b8fd6" />
+          <Text style={[styles.quickPeekTitle, { color: "#5b8fd6" }]}>Dad</Text>
+          <Text style={[styles.quickPeekSub, { color: "#5b8fd680" }]}>Open current week</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.quickPeekCard, { borderColor: "#6db58a30", backgroundColor: "#6db58a10" }]}
+          onPress={() => router.push("/soulful")}
+        >
+          <Feather name="wind" size={16} color="#6db58a" />
+          <Text style={[styles.quickPeekTitle, { color: "#6db58a" }]}>Soulful</Text>
+          <Text style={[styles.quickPeekSub, { color: "#6db58a80" }]}>Tap for chants</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.quickPeekCard, { borderColor: "#ef6c4b30", backgroundColor: "#ef6c4b10" }]}
+          onPress={() => router.push("/health")}
+        >
+          <Feather name="activity" size={16} color="#ef6c4b" />
+          <Text style={[styles.quickPeekTitle, { color: "#ef6c4b" }]}>Health</Text>
+          <Text style={[styles.quickPeekSub, { color: "#ef6c4b80" }]}>Track vitals</Text>
+        </TouchableOpacity>
       </View>
 
+      <SectionCard title="Symptoms This Week" icon="activity" accentColor="#e8608a" items={weekData.momSymptoms} />
       <SectionCard
-        title="Actions This Week"
-        icon="check-square"
-        accentColor="#5b8fd6"
-        items={weekData.dadActions}
-      />
-      <SectionCard
-        title="Relationship & Bonding"
-        icon="users"
-        accentColor="#5b8fd6"
-        items={weekData.dadRelationshipTips}
+        title={`Diet · ${DIETARY_LABELS[dietaryPreference]}`}
+        icon="coffee"
+        accentColor={DIETARY_COLORS[dietaryPreference]}
+        items={personalizedDiet}
         collapsed
       />
-
-      <View style={[styles.sectionTitle, { marginTop: 8 }]}>
-        <View style={[styles.sectionDot, { backgroundColor: "#6db58a" }]} />
-        <Text style={[styles.sectionTitleText, { color: c.foreground }]}>
-          {babyName ? `${babyName}'s Development` : "Baby's Development"}
-        </Text>
-      </View>
-
       <SectionCard
-        title="Fetal Development"
+        title="Top Actions"
+        icon="check-square"
+        accentColor="#5b8fd6"
+        items={weekData.dadActions.slice(0, 3)}
+      />
+      <SectionCard
+        title="Baby Development"
         icon="zap"
         accentColor="#6db58a"
-        items={weekData.fetalDevelopment}
+        items={weekData.fetalDevelopment.slice(0, 3)}
+        collapsed
       />
 
       <View style={styles.quickLinksRow}>
@@ -424,5 +458,68 @@ const styles = StyleSheet.create({
   sectionTitleText: {
     fontSize: 18,
     fontWeight: "700",
+  },
+  heroCompact: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginTop: 16,
+    gap: 10,
+    alignItems: "stretch",
+  },
+  heroLeft: {
+    flex: 1,
+    minHeight: 220,
+  },
+  heroRight: {
+    width: 120,
+    gap: 10,
+  },
+  countdownCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+    gap: 4,
+    alignItems: "flex-start",
+  },
+  countdownLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  countdownValue: {
+    fontSize: 28,
+    fontWeight: "800",
+  },
+  heroShortcut: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 12,
+    gap: 4,
+    alignItems: "flex-start",
+  },
+  heroShortcutText: {
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  quickPeekRow: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginTop: 16,
+    gap: 8,
+  },
+  quickPeekCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    gap: 4,
+    alignItems: "flex-start",
+  },
+  quickPeekTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  quickPeekSub: {
+    fontSize: 10,
+    fontWeight: "600",
   },
 });

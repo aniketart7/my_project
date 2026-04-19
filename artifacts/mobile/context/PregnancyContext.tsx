@@ -17,6 +17,7 @@ interface PregnancyContextType {
   lmpDate: Date | null;
   setLmpDate: (date: Date | null) => void;
   dueDate: Date | null;
+  daysToGo: number | null;
   momName: string;
   setMomName: (name: string) => void;
   dadName: string;
@@ -64,6 +65,9 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
   const [isSetup, setIsSetup] = useState<boolean>(false);
 
   const dueDate = lmpDate ? calcDueDateFromLmp(lmpDate) : null;
+  const daysToGo = dueDate
+    ? Math.max(0, Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   useEffect(() => {
     const load = async () => {
@@ -219,6 +223,7 @@ export function PregnancyProvider({ children }: { children: React.ReactNode }) {
         lmpDate,
         setLmpDate,
         dueDate,
+        daysToGo,
         momName,
         setMomName,
         dadName,
