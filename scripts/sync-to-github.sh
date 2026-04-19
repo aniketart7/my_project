@@ -16,7 +16,12 @@ REPO_HOST="${GITHUB_REPO_URL#https://}"
 LOCAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 TARGET_BRANCH="${GITHUB_SYNC_BRANCH:-main}"
 
-echo "Syncing local '$LOCAL_BRANCH' -> GitHub '$TARGET_BRANCH' at $GITHUB_REPO_URL ..."
+if [ "$LOCAL_BRANCH" != "$TARGET_BRANCH" ]; then
+  echo "Skipping GitHub sync: current branch '$LOCAL_BRANCH' is not '$TARGET_BRANCH'."
+  exit 0
+fi
+
+echo "Syncing '$LOCAL_BRANCH' -> GitHub '$TARGET_BRANCH' at $GITHUB_REPO_URL ..."
 
 push_to_github() {
   local extra_flags="$*"
