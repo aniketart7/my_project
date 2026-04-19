@@ -58,4 +58,4 @@ externalPort = 5173
 [userenv]
 
 [userenv.shared]
-GITHUB_SYNC_FORCE = "true"
+GITHUB_SYNC_FORCE = "false"
