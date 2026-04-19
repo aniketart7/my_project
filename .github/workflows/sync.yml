@@ -7,15 +7,18 @@ on:
 
 jobs:
   verify:
-    name: Confirm repository is in sync
+    name: Confirm repository is up to date
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Show latest commit
+      - name: Show sync details
         run: |
-          echo "Repository successfully synced."
-          echo "Branch: ${{ github.ref_name }}"
-          echo "Commit: ${{ github.sha }}"
+          echo "Repository successfully synced from Replit."
+          echo "Branch:  ${{ github.ref_name }}"
+          echo "Commit:  ${{ github.sha }}"
           echo "Message: ${{ github.event.head_commit.message }}"
+          echo "Total commits on branch: $(git rev-list --count HEAD)"
