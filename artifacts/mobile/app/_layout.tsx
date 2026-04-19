@@ -23,6 +23,7 @@ const queryClient = new QueryClient();
 function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="onboarding" options={{ animation: "fade" }} />
       <Stack.Screen name="index" />
       <Stack.Screen name="journey" />
       <Stack.Screen name="settings" />

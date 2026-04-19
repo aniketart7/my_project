@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Platform,
   ScrollView,
@@ -48,7 +48,14 @@ export default function HomeScreen() {
     dietaryPreference,
     dueDate,
     daysToGo,
+    isSetup,
   } = usePregnancy();
+
+  useEffect(() => {
+    if (!isSetup) {
+      router.replace("/onboarding");
+    }
+  }, [isSetup]);
 
   const weekData = getWeekData(currentWeek);
   const personalizedDiet = weekData
