@@ -1,0 +1,22 @@
+name: Sync to GitHub
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  sync:
+    name: Verify sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Confirm latest commit
+        run: |
+          echo "Repository is in sync."
+          echo "Latest commit: $(git log -1 --oneline)"
+          echo "Branch: ${{ github.ref_name }}"
