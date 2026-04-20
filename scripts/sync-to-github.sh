@@ -13,42 +13,57 @@ if [ -z "$GITHUB_REPO_URL" ]; then
 fi
 
 REPO_HOST="${GITHUB_REPO_URL#https://}"
-LOCAL_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-TARGET_BRANCH="${GITHUB_SYNC_BRANCH:-main}"
+PROTECTED_BRANCHES="main"
 
-if [ "$LOCAL_BRANCH" != "$TARGET_BRANCH" ]; then
-  echo "Skipping GitHub sync: current branch '$LOCAL_BRANCH' is not '$TARGET_BRANCH'."
-  exit 0
-fi
-
-echo "Syncing '$LOCAL_BRANCH' -> GitHub '$TARGET_BRANCH' at $GITHUB_REPO_URL ..."
-
-push_to_github() {
-  local extra_flags="$*"
+push_branch_to_github() {
+  local branch="$1"
+  local extra_flags="${2:-}"
   GIT_TERMINAL_PROMPT=0 \
     git \
       -c credential.helper= \
       -c "url.https://x-token-auth:${GITHUB_TOKEN}@${REPO_HOST}.insteadOf=https://${REPO_HOST}" \
-      push "https://${REPO_HOST}" "${LOCAL_BRANCH}:${TARGET_BRANCH}" $extra_flags 2>&1 \
+      push "https://${REPO_HOST}" "${branch}:${branch}" $extra_flags 2>&1 \
     | sed "s|${GITHUB_TOKEN}|***|g"
 }
 
-if push_to_github; then
-  echo "Sync complete."
-  exit 0
-fi
+is_protected() {
+  local branch="$1"
+  echo "$PROTECTED_BRANCHES" | tr ',' '\n' | grep -qx "$branch"
+}
 
-PROTECTED_BRANCHES="main"
-if echo "$PROTECTED_BRANCHES" | tr ',' '\n' | grep -qx "$TARGET_BRANCH"; then
-  echo "ERROR: Push to GitHub failed. Force-push is permanently disabled for the protected branch '$TARGET_BRANCH'."
+FAILED_BRANCHES=()
+
+while IFS= read -r branch; do
+  echo "Syncing branch '$branch' -> GitHub ..."
+
+  if push_branch_to_github "$branch"; then
+    echo "Sync complete for '$branch'."
+    continue
+  fi
+
+  if is_protected "$branch"; then
+    echo "ERROR: Push to GitHub failed for protected branch '$branch'. Force-push is permanently disabled."
+    FAILED_BRANCHES+=("$branch")
+    continue
+  fi
+
+  if [ "${GITHUB_SYNC_FORCE:-false}" = "true" ]; then
+    echo "Normal push failed for '$branch' and GITHUB_SYNC_FORCE=true — retrying with --force ..."
+    if push_branch_to_github "$branch" "--force"; then
+      echo "Sync complete (forced) for '$branch'."
+    else
+      echo "ERROR: Force-push also failed for '$branch'."
+      FAILED_BRANCHES+=("$branch")
+    fi
+  else
+    echo "ERROR: Push to GitHub failed for '$branch'. Set GITHUB_SYNC_FORCE=true to allow force-push (not available for protected branches)."
+    FAILED_BRANCHES+=("$branch")
+  fi
+done < <(git branch --format='%(refname:short)')
+
+if [ ${#FAILED_BRANCHES[@]} -gt 0 ]; then
+  echo "ERROR: The following branches failed to sync: ${FAILED_BRANCHES[*]}"
   exit 1
 fi
 
-if [ "${GITHUB_SYNC_FORCE:-false}" = "true" ]; then
-  echo "Normal push failed and GITHUB_SYNC_FORCE=true — retrying with --force ..."
-  push_to_github "--force"
-  echo "Sync complete (forced)."
-else
-  echo "ERROR: Push to GitHub failed. Set GITHUB_SYNC_FORCE=true to allow force-push (not available for protected branches)."
-  exit 1
-fi
+echo "All branches synced successfully."
