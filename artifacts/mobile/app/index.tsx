@@ -236,6 +236,33 @@ export default function HomeScreen() {
             <Text style={[styles.navCardSub, { color: "#9b6db580" }]}>Yoga & mantra</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Row 3 */}
+        <View style={styles.navRow}>
+          <TouchableOpacity
+            style={[styles.navCard, { backgroundColor: "#ef6c4b12", borderColor: "#ef6c4b30" }]}
+            onPress={() => router.push("/fitness")}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.navCardIcon, { backgroundColor: "#ef6c4b20" }]}>
+              <Feather name="zap" size={22} color="#ef6c4b" />
+            </View>
+            <Text style={[styles.navCardTitle, { color: "#ef6c4b" }]}>Fitness</Text>
+            <Text style={[styles.navCardSub, { color: "#ef6c4b80" }]}>Steps · sleep · weight</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.navCard, { backgroundColor: "#6b7db312", borderColor: "#6b7db330" }]}
+            onPress={() => router.push("/symptoms")}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.navCardIcon, { backgroundColor: "#6b7db320" }]}>
+              <Feather name="shield" size={22} color="#6b7db3" />
+            </View>
+            <Text style={[styles.navCardTitle, { color: "#6b7db3" }]}>Symptoms</Text>
+            <Text style={[styles.navCardSub, { color: "#6b7db380" }]}>Checker & advice</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* ─── BABY THIS WEEK ─── */}
