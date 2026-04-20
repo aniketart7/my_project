@@ -29,6 +29,9 @@ function RootLayoutNav() {
       <Stack.Screen name="settings" />
       <Stack.Screen name="resources" />
       <Stack.Screen name="health" />
+      <Stack.Screen name="fitness" />
+      <Stack.Screen name="symptoms" />
+      <Stack.Screen name="kick-counter" />
       <Stack.Screen name="soulful" />
       <Stack.Screen name="week/[week]" />
     </Stack>
