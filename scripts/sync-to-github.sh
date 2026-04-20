@@ -10,7 +10,11 @@ send_failure_notification() {
 
   if [ -n "$SLACK_WEBHOOK_URL" ]; then
     local payload
-    payload=$(printf '{"text":"%s"}' "$message")
+    if command -v jq > /dev/null 2>&1; then
+      payload=$(jq -Rn --arg text "$message" '{text:$text}')
+    else
+      payload=$(printf '{"text":"%s"}' "$message")
+    fi
     curl -s -X POST -H 'Content-type: application/json' \
       --data "$payload" \
       "$SLACK_WEBHOOK_URL" > /dev/null 2>&1 \
