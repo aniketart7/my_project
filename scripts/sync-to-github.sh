@@ -2,13 +2,34 @@
 
 set -eo pipefail
 
+# send_failure_notification <message>
+# Sends an alert to configured destinations when a sync failure occurs.
+# Set SLACK_WEBHOOK_URL to receive Slack notifications.
+send_failure_notification() {
+  local message="$1"
+
+  if [ -n "$SLACK_WEBHOOK_URL" ]; then
+    local payload
+    payload=$(printf '{"text":"%s"}' "$message")
+    curl -s -X POST -H 'Content-type: application/json' \
+      --data "$payload" \
+      "$SLACK_WEBHOOK_URL" > /dev/null 2>&1 \
+      && echo "Failure notification sent to Slack." \
+      || echo "WARNING: Failed to send Slack notification."
+  else
+    echo "NOTE: No notification destination configured. Set SLACK_WEBHOOK_URL to receive sync failure alerts."
+  fi
+}
+
 if [ -z "$GITHUB_TOKEN" ]; then
   echo "ERROR: GITHUB_TOKEN secret is not set. Skipping GitHub sync."
+  send_failure_notification "GitHub sync failed: GITHUB_TOKEN secret is not set."
   exit 1
 fi
 
 if [ -z "$GITHUB_REPO_URL" ]; then
   echo "ERROR: GITHUB_REPO_URL secret is not set. Skipping GitHub sync."
+  send_failure_notification "GitHub sync failed: GITHUB_REPO_URL secret is not set."
   exit 1
 fi
 
@@ -63,6 +84,7 @@ done < <(git branch --format='%(refname:short)')
 
 if [ ${#FAILED_BRANCHES[@]} -gt 0 ]; then
   echo "ERROR: The following branches failed to sync: ${FAILED_BRANCHES[*]}"
+  send_failure_notification "GitHub sync failed for branches: ${FAILED_BRANCHES[*]}. Check post-merge logs for details."
   exit 1
 fi
 
